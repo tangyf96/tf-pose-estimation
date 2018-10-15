@@ -1,6 +1,6 @@
 import logging
 import math
-
+import os
 import slidingwindow as sw
 
 import cv2
@@ -379,28 +379,11 @@ class TfPoseEstimator:
 
     @staticmethod
     def draw_humans(im_name,npimg, humans, imgcopy=False):
-        im_name=im_name.replace('.jpg',"")
-        f = open(im_name+".txt", "w")
-        body_info={0: "Nose",
-    1: "Neck",
-    2: "RShoulder",
-    3: "RElbow",
-    4: "RWrist",
-    5: "LShoulder",
-    6: "LElbow",
-    7: "LWrist",
-    8: "RHip" ,
-    9: "RKnee" ,
-    10: "RAnkle" ,
-    11: "LHip" ,
-    12: "LKnee" ,
-    13: "LAnkle" ,
-    14: "REye" ,
-    15: "LEye" ,
-    16: "REar" ,
-    17: "LEar" ,
-    18: "Background"
-}
+        op_imfile = os.path.join('images/xahid_youya/output/', im_name.replace(".jpg",".txt"))
+        f = open(op_imfile, "w")
+        body_info={0: "Nose", 1: "Neck", 2: "RShoulder", 3: "RElbow", 4: "RWrist",
+		   5: "LShoulder", 6: "LElbow", 7: "LWrist", 8: "RHip", 9: "RKnee", 10: "RAnkle" , 11: "LHip" , 12: "LKnee", 
+		   13: "LAnkle", 14: "REye", 15: "LEye", 16: "REar", 17: "LEar", 18: "Background"}
         if imgcopy:
             npimg = np.copy(npimg)
         image_h, image_w = npimg.shape[:2]

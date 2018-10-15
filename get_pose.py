@@ -20,7 +20,7 @@ logger.addHandler(ch)
 
 
 if __name__ == '__main__':
-    im_name = 'moto_left1.jpg'
+    im_name = 'moto_right1.jpg'
     im_file = os.path.join('images/xahid_youya/input/', im_name)
     parser = argparse.ArgumentParser(description='tf-pose-estimation run')
     parser.add_argument('--image', type=str, default=im_file)
@@ -50,6 +50,6 @@ if __name__ == '__main__':
 
     logger.info('inference image: %s in %.4f seconds.' % (args.image, elapsed))
 
-    image = TfPoseEstimator.draw_humans(image, humans, imgcopy=False)
+    image = TfPoseEstimator.draw_humans(im_name, image, humans, imgcopy=False)
     op_imfile = os.path.join('images/xahid_youya/output/', im_name)
     cv2.imwrite(op_imfile, image)
