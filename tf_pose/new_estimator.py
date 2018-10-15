@@ -378,7 +378,9 @@ class TfPoseEstimator:
         return npimg_q
 
     @staticmethod
-    def draw_humans(npimg, humans, imgcopy=False):
+    def draw_humans(im_name,npimg, humans, imgcopy=False):
+        im_name=im_name.replace('.jpg',"")
+        f = open(im_name+".txt", "w")
         body_info={0: "Nose",
     1: "Neck",
     2: "RShoulder",
@@ -404,6 +406,8 @@ class TfPoseEstimator:
         image_h, image_w = npimg.shape[:2]
         #print(image_h,image_w)
         centers = {}
+        f.write(str(len(humans)))
+        f.write("\n\n")
         for human in humans:
             # draw point
             for i in range(common.CocoPart.Background.value):
@@ -411,13 +415,19 @@ class TfPoseEstimator:
 
                 if i not in human.body_parts.keys():
                     print(body_info.get(i),'None')
+                    f.write(body_info.get(i)+": None")
+                    f.write('\n')
                     continue
                 #print(human.body_parts)
                 body_part = human.body_parts[i]
                 center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
                 print(body_info.get(body_part.get_part_name().value),center)
+                info=str(center).replace("(","")
+                info=info.replace(")","")
+                f.write(body_info.get(body_part.get_part_name().value)+": "+info)
                 centers[i] = center
                 cv2.circle(npimg, center, 3, common.CocoColors[i], thickness=3, lineType=8, shift=0)
+                f.write("\n")
             # draw line
             #for pair_order, pair in enumerate(common.CocoPairsRender):
                 #if pair[0] not in human.body_parts.keys() or pair[1] not in human.body_parts.keys():
@@ -426,6 +436,7 @@ class TfPoseEstimator:
                 # npimg = cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
                 #cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
             print('\n')
+            f.write("\n\n")
         return npimg
 
     def _get_scaled_img(self, npimg, scale):
