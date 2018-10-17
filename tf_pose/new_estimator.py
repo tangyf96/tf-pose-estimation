@@ -382,7 +382,7 @@ class TfPoseEstimator:
         op_imfile = os.path.join('images/xahid_youya/output/', im_name.replace(".jpg",".txt"))
         f = open(op_imfile, "w")
         body_info={0: "Nose", 1: "Neck", 2: "RShoulder", 3: "RElbow", 4: "RWrist",
-		   5: "LShoulder", 6: "LElbow", 7: "LWrist", 8: "RHip", 9: "RKnee", 10: "RAnkle" , 11: "LHip" , 12: "LKnee", 
+		   5: "LShoulder", 6: "LElbow", 7: "LWrist", 8: "RHip", 9: "RKnee", 10: "RAnkle" , 11: "LHip" , 12: "LKnee",
 		   13: "LAnkle", 14: "REye", 15: "LEye", 16: "REar", 17: "LEar", 18: "Background"}
         if imgcopy:
             npimg = np.copy(npimg)
@@ -393,9 +393,16 @@ class TfPoseEstimator:
         f.write("\n\n")
         for human in humans:
             # draw point
+            posg_y=0
+            posl_y=100000
+            posg_x=0
+            posl_x=1000000
+            #position=human.get_upper_body_box(image_h, image_w)
+            #cv2.circle(npimg,(position.get("x")+position.get("w"),position.get("y")+position.get("h")),10,(20,80,0),5)
+            #cv2.circle(npimg,(position.get("x"),position.get("y")),10,(20,80,80),5)
+            #cv2.rectangle(npimg,(position.get("x")*image_w,position.get("y")*image_h),(position.get("x")+position.get("w"),position.get("y")*image_h+position.get("h")),)
             for i in range(common.CocoPart.Background.value):
                 #print(len(human.body_parts))
-
                 if i not in human.body_parts.keys():
                     print(body_info.get(i),'None')
                     f.write(body_info.get(i)+": None")
@@ -405,12 +412,22 @@ class TfPoseEstimator:
                 body_part = human.body_parts[i]
                 center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
                 print(body_info.get(body_part.get_part_name().value),center)
+                pos_x,pos_y=center
+                posg_x=max(pos_x,posg_x)
+                posl_x=min(posl_x,pos_x)
+                posg_y=max(pos_y,posg_y)
+                posl_y=min(posl_y,pos_y)
                 info=str(center).replace("(","")
                 info=info.replace(")","")
                 f.write(body_info.get(body_part.get_part_name().value)+": "+info)
                 centers[i] = center
                 cv2.circle(npimg, center, 3, common.CocoColors[i], thickness=3, lineType=8, shift=0)
                 f.write("\n")
+            #cv2.circle(npimg,(posl_x,posl_y),10,(20,80,0),5)
+            #cv2.circle(npimg,(posg_x,posg_y),10,(20,80,80),5)
+            cv2.rectangle(npimg,(posl_x-20,posl_y-20),(posg_x+20,posg_y+20),(0,255,0),3)
+            print(posl_x,posl_y)
+            print(posg_x,posg_y)
             # draw line
             #for pair_order, pair in enumerate(common.CocoPairsRender):
                 #if pair[0] not in human.body_parts.keys() or pair[1] not in human.body_parts.keys():
@@ -553,6 +570,7 @@ class TfPoseEstimator:
 
         t = time.time()
         humans = PoseEstimator.estimate_paf(peaks, self.heatMat, self.pafMat)
+        print(humans)
         logger.debug('estimate time=%.5f' % (time.time() - t))
         return humans
 
