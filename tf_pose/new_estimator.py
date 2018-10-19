@@ -379,7 +379,8 @@ class TfPoseEstimator:
 
     @staticmethod
     def draw_humans(im_name,npimg, humans, imgcopy=False):
-        op_imfile = os.path.join('images/xahid_youya/output/', im_name.replace(".jpg",".txt"))
+        op_imfile = 'images/xahid_youya/output/'+(im_name.replace("images/xahid_youya/input","")).replace(".jpg",".txt")
+        print(op_imfile)
         f = open(op_imfile, "w")
         body_info={0: "Nose", 1: "Neck", 2: "RShoulder", 3: "RElbow", 4: "RWrist",
 		   5: "LShoulder", 6: "LElbow", 7: "LWrist", 8: "RHip", 9: "RKnee", 10: "RAnkle" , 11: "LHip" , 12: "LKnee",
