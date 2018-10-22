@@ -23,7 +23,7 @@ if __name__ == '__main__':
     PATH_TO_TEST_IMAGES_DIR = 'images/xahid_youya/input'
     TEST_IMAGE_PATHS = glob.glob(os.path.join(PATH_TO_TEST_IMAGES_DIR, '*.jpg'))
     for im_file in TEST_IMAGE_PATHS:
-        print(im_file)
+        #print(im_file)
         parser = argparse.ArgumentParser(description='tf-pose-estimation run')
         parser.add_argument('--image', type=str, default=im_file)
         parser.add_argument('--model', type=str, default='cmu', help='cmu / mobilenet_thin')
@@ -52,7 +52,7 @@ if __name__ == '__main__':
 
         image = TfPoseEstimator.draw_humans(im_file, image, humans, imgcopy=False)
         im_file1=im_file.replace('images/xahid_youya/input','')
-        print(im_file1)
-        op_imfile = os.path.join('images/xahid_youya/output', im_file1)
-        print(op_imfile)
+        #print(im_file1)
+        op_imfile = 'images/xahid_youya/output'+im_file1
+        #print(op_imfile)
         cv2.imwrite(op_imfile, image)
