@@ -26,6 +26,16 @@ formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s] %(messag
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+def sort_points(human_info):
+    for iter_num in range(len(human_info)-1,0,-1):
+        for idx in range(iter_num):
+            (first_part,(first_x,first_y))=human_info[idx][0]
+            (second_part,(second_x,second_y))=human_info[idx+1][0]
+            if first_x>second_x or(first_x==seoncd_x and first_y>second_y):
+                temp = human_info[idx]
+                human_info[idx]= human_info[idx+1]
+                human_info[idx+1] = temp
+        return human_info
 
 def _round(v):
     return int(round(v))
@@ -376,11 +386,10 @@ class TfPoseEstimator:
         # npimg_q += 0.5
         npimg_q = npimg_q.astype(np.uint8)
         return npimg_q
-
     @staticmethod
     def draw_humans(im_name,npimg, humans, imgcopy=False):
         op_imfile = 'images/xahid_youya/output/'+(im_name.replace("images/xahid_youya/input","")).replace(".jpg",".txt")
-        print(op_imfile)
+        #print(op_imfile)
         f = open(op_imfile, "w")
         body_info={0: "Nose", 1: "Neck", 2: "RShoulder", 3: "RElbow", 4: "RWrist",
 		   5: "LShoulder", 6: "LElbow", 7: "LWrist", 8: "RHip", 9: "RKnee", 10: "RAnkle" , 11: "LHip" , 12: "LKnee",
@@ -392,12 +401,14 @@ class TfPoseEstimator:
         centers = {}
         f.write(str(len(humans)))
         f.write("\n\n")
+        human_info=[]
         for human in humans:
             # draw point
             posg_y=0
             posl_y=100000
             posg_x=0
             posl_x=1000000
+            bodies=[]
             #position=human.get_upper_body_box(image_h, image_w)
             #cv2.circle(npimg,(position.get("x")+position.get("w"),position.get("y")+position.get("h")),10,(20,80,0),5)
             #cv2.circle(npimg,(position.get("x"),position.get("y")),10,(20,80,80),5)
@@ -420,10 +431,12 @@ class TfPoseEstimator:
                 posl_y=min(posl_y,pos_y)
                 info=str(center).replace("(","")
                 info=info.replace(")","")
-                f.write(body_info.get(body_part.get_part_name().value)+": "+info)
+                [x,y]=info.split(",")
+                #print(int(x),int(y))
+                bodies.append((body_info.get(body_part.get_part_name().value),(int(x),int(y))))
                 centers[i] = center
                 cv2.circle(npimg, center, 3, common.CocoColors[i], thickness=3, lineType=8, shift=0)
-                f.write("\n")
+                #f.write("\n")
             #cv2.circle(npimg,(posl_x,posl_y),10,(20,80,0),5)
             #cv2.circle(npimg,(posg_x,posg_y),10,(20,80,80),5)
             cv2.rectangle(npimg,(posl_x-20,posl_y-20),(posg_x+20,posg_y+20),(0,255,0),3)
@@ -437,7 +450,14 @@ class TfPoseEstimator:
                 # npimg = cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
                 #cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
             print('\n')
+            human_info.append(bodies)
+        human_info=sort_points(human_info)
+        for i in human_info:
+            for (information,(x,y)) in i:
+                f.write(information+": "+"("+str(x)+","+str(y)+")")
+                f.write("\n")
             f.write("\n\n")
+        f.close()
         return npimg
 
     def _get_scaled_img(self, npimg, scale):
