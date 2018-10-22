@@ -26,16 +26,32 @@ formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s] %(messag
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+def compare(first_human,second_human):
+    flag=False
+    pointer=0
+    result=0
+    while not flag and pointer<min(len(first_human),len(second_human)):
+        first_point=first_human[pointer]
+        second_point=second_human[pointer]
+        if first_point!=None and second_point!=None:
+            (first_x,first_y)=first_point
+            (second_x,second_y)=second_point
+            flag=True
+            if first_x<second_x or(first_x==second_x and first_y<second_y):
+                result=-1
+            else:
+                result=1
+        pointer+=pointer
+    return result
+
 def sort_points(human_info):
     for iter_num in range(len(human_info)-1,0,-1):
         for idx in range(iter_num):
-            (first_part,(first_x,first_y))=human_info[idx][0]
-            (second_part,(second_x,second_y))=human_info[idx+1][0]
-            if first_x>second_x or(first_x==seoncd_x and first_y>second_y):
+            if compare(human_info[idx],human_info[idx+1])==1:
                 temp = human_info[idx]
                 human_info[idx]= human_info[idx+1]
                 human_info[idx+1] = temp
-        return human_info
+    return human_info
 
 def _round(v):
     return int(round(v))
@@ -388,9 +404,6 @@ class TfPoseEstimator:
         return npimg_q
     @staticmethod
     def draw_humans(im_name,npimg, humans, imgcopy=False):
-        op_imfile = 'images/xahid_youya/output/'+(im_name.replace("images/xahid_youya/input","")).replace(".jpg",".txt")
-        #print(op_imfile)
-        f = open(op_imfile, "w")
         body_info={0: "Nose", 1: "Neck", 2: "RShoulder", 3: "RElbow", 4: "RWrist",
 		   5: "LShoulder", 6: "LElbow", 7: "LWrist", 8: "RHip", 9: "RKnee", 10: "RAnkle" , 11: "LHip" , 12: "LKnee",
 		   13: "LAnkle", 14: "REye", 15: "LEye", 16: "REar", 17: "LEar", 18: "Background"}
@@ -399,8 +412,6 @@ class TfPoseEstimator:
         image_h, image_w = npimg.shape[:2]
         #print(image_h,image_w)
         centers = {}
-        f.write(str(len(humans)))
-        f.write("\n\n")
         human_info=[]
         for human in humans:
             # draw point
@@ -417,8 +428,9 @@ class TfPoseEstimator:
                 #print(len(human.body_parts))
                 if i not in human.body_parts.keys():
                     print(body_info.get(i),'None')
-                    f.write(body_info.get(i)+": None")
-                    f.write('\n')
+                    bodies.append((body_info.get(i),None))
+                    #f.write(body_info.get(i)+": None")
+                    #f.write('\n')
                     continue
                 #print(human.body_parts)
                 body_part = human.body_parts[i]
@@ -440,8 +452,8 @@ class TfPoseEstimator:
             #cv2.circle(npimg,(posl_x,posl_y),10,(20,80,0),5)
             #cv2.circle(npimg,(posg_x,posg_y),10,(20,80,80),5)
             cv2.rectangle(npimg,(posl_x-20,posl_y-20),(posg_x+20,posg_y+20),(0,255,0),3)
-            print(posl_x,posl_y)
-            print(posg_x,posg_y)
+            #print(posl_x,posl_y)
+            #print(posg_x,posg_y)
             # draw line
             #for pair_order, pair in enumerate(common.CocoPairsRender):
                 #if pair[0] not in human.body_parts.keys() or pair[1] not in human.body_parts.keys():
@@ -452,9 +464,19 @@ class TfPoseEstimator:
             print('\n')
             human_info.append(bodies)
         human_info=sort_points(human_info)
+        #f.write("\n")
+        op_imfile = 'images/xahid_youya/output/'+(im_name.replace("images/xahid_youya/input","")).replace(".jpg",".txt")
+        #print(op_imfile)
+        f = open(op_imfile, "w")
+        f.write(str(len(humans)))
+        f.write("\n\n")
         for i in human_info:
-            for (information,(x,y)) in i:
-                f.write(information+": "+"("+str(x)+","+str(y)+")")
+            for (information,location) in i:
+                if location!=None:
+                    x,y=location
+                    f.write(information+": "+"("+str(x)+","+str(y)+")")
+                else:
+                    f.write(information+": "+"None")
                 f.write("\n")
             f.write("\n\n")
         f.close()
@@ -591,7 +613,7 @@ class TfPoseEstimator:
 
         t = time.time()
         humans = PoseEstimator.estimate_paf(peaks, self.heatMat, self.pafMat)
-        print(humans)
+        #print(humans)
         logger.debug('estimate time=%.5f' % (time.time() - t))
         return humans
 
