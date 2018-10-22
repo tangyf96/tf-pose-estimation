@@ -1,0 +1,62 @@
+3
+
+Nose: (496,554)
+Neck: (474,598)
+RShoulder: (444,612)
+RElbow: (456,658)
+RWrist: (488,702)
+LShoulder: (506,586)
+LElbow: (538,606)
+LWrist: None
+RHip: (504,688)
+RKnee: (648,696)
+RAnkle: None
+LHip: (542,672)
+LKnee: None
+LAnkle: None
+REye: (484,548)
+LEye: (496,544)
+REar: (456,556)
+LEar: None
+
+
+Nose: (792,468)
+Neck: (772,506)
+RShoulder: (760,510)
+RElbow: (782,566)
+RWrist: (836,582)
+LShoulder: (786,502)
+LElbow: (802,546)
+LWrist: (834,552)
+RHip: (774,602)
+RKnee: (904,612)
+RAnkle: (874,670)
+LHip: (798,590)
+LKnee: (910,608)
+LAnkle: (880,672)
+REye: (784,462)
+LEye: (794,460)
+REar: (762,470)
+LEar: None
+
+
+Nose: (1028,520)
+Neck: (1046,564)
+RShoulder: (998,562)
+RElbow: (964,610)
+RWrist: (912,646)
+LShoulder: (1090,574)
+LElbow: (1062,640)
+LWrist: (1006,642)
+RHip: (1038,654)
+RKnee: (950,662)
+RAnkle: (934,788)
+LHip: (1078,670)
+LKnee: (1036,662)
+LAnkle: None
+REye: (1020,512)
+LEye: (1040,514)
+REar: (1010,516)
+LEar: (1064,520)
+
+
