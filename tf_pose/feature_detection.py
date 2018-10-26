@@ -125,8 +125,10 @@ def face_detector(image,ymin,ymax,xmin,xmax):
     face_names = []
     rgb_frame = image[:, :, ::-1]
     face_locations = face_recognition.face_locations(rgb_frame)
-    print(face_locations[0])
-    return face_locations[0]
+    if face_locations==[]:
+        return (0,0,0,0)
+    else:
+        return face_locations[0]
 def get_five_features(image,ymin,ymax,xmin,xmax):
     feature=[]
     temp=hull(ymin,xmin,ymax,xmax,image)
@@ -136,6 +138,6 @@ def get_five_features(image,ymin,ymax,xmin,xmax):
     for j in get_moment(ymin,xmin,ymax,xmax,image).tolist():
         feature.append(j)
     for m in face_detector(image,ymin,ymax,xmin,xmax):
-        print(type(m))
+        #print(type(m))
         feature.append(m)
     return feature
