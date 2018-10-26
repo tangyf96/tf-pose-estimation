@@ -42,20 +42,13 @@ def compare(first_human,second_human):
                 result=1
         pointer+=pointer
     return result
+
 def remove_person(bodies):
     count=0
     for (information,location) in bodies:
         if location==None:
             count=count+1
     return count
-def sort_points(human_info):
-    for iter_num in range(len(human_info)-1,0,-1):
-        for idx in range(iter_num):
-            if compare(human_info[idx],human_info[idx+1])==1:
-                temp = human_info[idx]
-                human_info[idx]= human_info[idx+1]
-                human_info[idx+1] = temp
-    return human_info
 
 def _round(v):
     return int(round(v))
@@ -475,23 +468,9 @@ class TfPoseEstimator:
                 human_info.append(bodies)
                 human_boxes.append([posl_x,posl_y,posg_x,posg_y])
                 features.append(feature_detection.get_five_features(npimg,posl_y-20,posg_y,posl_x,posg_x))
-        human_info=sort_points(human_info)
+        #human_info=sort_points(human_info)
         #f.write("\n")
-        op_imfile = 'images/xahid_youya/output/'+(im_name.replace("images/xahid_youya/all_half","")).replace(".jpg",".txt")
         #print(op_imfile)
-        f = open(op_imfile, "w")
-        f.write(str(len(human_info)))
-        f.write("\n\n")
-        for i in human_info:
-            for (information,location) in i:
-                if location!=None:
-                    x,y=location
-                    f.write(information+": "+str(x)+", "+str(y))
-                else:
-                    f.write(information+": "+"None")
-                f.write("\n")
-            f.write("\n\n")
-        f.close()
         return (npimg,human_info,human_boxes,features)
 
     def _get_scaled_img(self, npimg, scale):
