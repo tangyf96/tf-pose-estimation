@@ -13,7 +13,7 @@ from tf_pose.networks import get_graph_path, model_wh
 import random
 import numpy
 from scipy.spatial import distance
-
+from sklearn.metrics import mean_squared_error
 logger = logging.getLogger('TfPoseEstimator')
 logger.setLevel(logging.DEBUG)
 ch = logging.StreamHandler()
@@ -21,6 +21,23 @@ ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
+
+def write_to_file(persons,op_imfile,count):
+    op_imfile = 'images/xahid_youya/output/'+(op_imfile.replace("images/xahid_youya/test_openpose","")).replace(".png",".txt")
+    f = open(op_imfile, "w")
+    f.write(str(len(human_info)))
+    f.write("\n\n")
+    for i in persons:
+        if i.get("last_update")==count:
+            for (information,location) in i.get("body_points"):
+                if location!=None:
+                    x,y=location
+                    f.write(information+": "+str(x)+", "+str(y))
+                else:
+                    f.write(information+": "+"None")
+                f.write("\n")
+            f.write("\n\n")
+    f.close()
 def feature_extraction(human_info,human_boxes,feature,count):
     persons=[]
     count=0
@@ -30,6 +47,8 @@ def feature_extraction(human_info,human_boxes,feature,count):
     return persons
 def square_error_checker(first_human,second_human):
     error=0
+    first_location=[]
+    second_location=[]
     for i in range(len(first_human)):
         (information1,location1)=first_human[i]
         (information2,location2)=second_human[i]
@@ -37,15 +56,18 @@ def square_error_checker(first_human,second_human):
         if (location1!=None and location2!=None):
             (x1,y1)=location1
             (x2,y2)=location2
-            error=error+math.sqrt((x1-x2)*(x1-x2)+ (y1-y2)*(y1-y2))
-    return error
+            first_location.append(location1)
+            second_location.append(location2)
+    return mean_squared_error(first_location, second_location)
 def draw_persons(npimg,count,persons,color):
+    while len(color)<len(persons):
+        color.append([random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)])
     for i in range(len(persons)):
         if persons[i].get("last_update")==count:
             for (information,location) in persons[i].get("body_points"):
                 if location!=None:
                     cv2.circle(npimg, location, 3,color[i], thickness=3, lineType=8, shift=0)
-    return npimg
+    return (npimg,color)
 def find_min(first_human,persons,count,exclude):
     #print(first_human.get("body_points"))
     min_error=square_error_checker(persons[0].get("body_points"),first_human.get("body_points"))
@@ -53,7 +75,7 @@ def find_min(first_human,persons,count,exclude):
     target=0
     for i in range(len(persons)):
         #print(persons[i].get("body_points"))
-        if exclude.count(i)==0:
+        if i not in exclude:
             current_error=square_error_checker(first_human.get("body_points"),persons[i].get("body_points"))
             if current_error<=min_error:
                 min_error=current_error
@@ -65,15 +87,17 @@ def find_min(first_human,persons,count,exclude):
     #persons[target].update({"last_update":count})
     return (target,error)
 if __name__ == '__main__':
-    PATH_TO_TEST_IMAGES_DIR = 'images/xahid_youya/all_half'
-    TEST_IMAGE_PATHS = glob.glob(os.path.join(PATH_TO_TEST_IMAGES_DIR, '*.jpg'))
+    PATH_TO_TEST_IMAGES_DIR = 'images/xahid_youya/test_openpose'
+    TEST_IMAGE_PATHS = glob.glob(os.path.join(PATH_TO_TEST_IMAGES_DIR, '*.png'))
     count=0
     persons=[]
     color=[]
     first_frame=''
-    list.sort(TEST_IMAGE_PATHS)
-    #print (TEST_IMAGE_PATHS)
+    #list.sort(TEST_IMAGE_PATHS)
+    TEST_IMAGE_PATHS.sort(key=lambda f: int(filter(str.isdigit, f)))
     for im_file in TEST_IMAGE_PATHS:
+        #im_file=list.sort(TEST_IMAGE_PATHS)[m]
+        print(im_file)
         img = cv2.imread(im_file)
         #print(im_file)
         parser = argparse.ArgumentParser(description='tf-pose-estimation run')
@@ -108,29 +132,30 @@ if __name__ == '__main__':
                 color_person = [random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)]
                 color.append(color_person)
             persons=temp_info
-            image=draw_persons(image,count,persons,color)
-            first_frame=im_file
             #cv2.imshow("test", image)
-            #cv2.waitKey(2)
+            #cv2.waitKey(1)
         else:
-            if range(len(temp_info))<=range(len(persons)):
-                for i in range(len(temp_info)):
-                    exclude=[]
-                    (target,error)=find_min(temp_info[i],persons,count,exclude)
-                    print(error)
-                    while error>100:
-                        exclude.append(target)
-                        (target,match_number)=find_min(temp_info[i],persons,count,exclude)
+            for i in range(len(temp_info)):
+                exclude=[]
+                (target,error)=find_min(temp_info[i],persons,count,exclude)
+                print(error)
+                if error>200:
+                    persons.append({"id":len(persons),"body_points":temp_info[i].get("body_points"),"last_update":count,"bound_box":temp_info[i].get("boudn_boxes"),"feature":temp_info[i].get("feature")})
+                        #exclude.append(target)
+                        #(target,error)=find_min(temp_info[i],persons,count,exclude)
+                else:
+                    exclude.append(target)
                     persons[target].update({"body_points":temp_info[i].get("body_points")})
                     persons[target].update({"bound_box":temp_info[i].get("bound_box")})
                     persons[target].update({"feature":temp_info[i].get("feature")})
                     persons[target].update({"last_update":count})
-                image=draw_persons(image,count,persons,color)
+        (image,color)=draw_persons(image,count,persons,color)
+        write_to_file(persons,im_file,count)
                 #cv2.imshow("test", image)
-                #cv2.waitKey(2)
+                #cv2.waitKey(1)
         count=count+1
-        im_file1=im_file.replace('images/xahid_youya/all_half','')
+        im_file1=im_file.replace('images/xahid_youya/test_openpose','')
         #print(im_file1)
         op_imfile = 'images/xahid_youya/output'+im_file1
         #print(op_imfile)
-        cv2.imwrite(op_imfile, image)
+        cv2.imwrite(op_imfile,image)
