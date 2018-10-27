@@ -21,7 +21,7 @@ ch.setLevel(logging.DEBUG)
 formatter = logging.Formatter('[%(asctime)s] [%(name)s] [%(levelname)s] %(message)s')
 ch.setFormatter(formatter)
 logger.addHandler(ch)
-
+#write the body points of each human into a file
 def write_to_file(persons,op_imfile,count):
     op_imfile = 'images/xahid_youya/output/'+(op_imfile.replace("images/xahid_youya/test_openpose","")).replace(".png",".txt")
     f = open(op_imfile, "w")
@@ -38,6 +38,7 @@ def write_to_file(persons,op_imfile,count):
                 f.write("\n")
             f.write("\n\n")
     f.close()
+#put the body points and features of each human into a dictionary below
 def feature_extraction(human_info,human_boxes,feature,count):
     persons=[]
     count=0
@@ -45,6 +46,7 @@ def feature_extraction(human_info,human_boxes,feature,count):
         some_human={"id":count,"body_points":human_info[i],"last_update":count,"bound_box":human_boxes[i],"feature":feature[i]}
         persons.append(some_human)
     return persons
+#check the body points distance between two human beings
 def square_error_checker(first_human,second_human):
     error=0
     first_location=[]
@@ -59,6 +61,7 @@ def square_error_checker(first_human,second_human):
             first_location.append(location1)
             second_location.append(location2)
     return mean_squared_error(first_location, second_location)
+#draw the body points of each person in each frame
 def draw_persons(npimg,count,persons,color):
     while len(color)<len(persons):
         color.append([random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)])
@@ -68,6 +71,7 @@ def draw_persons(npimg,count,persons,color):
                 if location!=None:
                     cv2.circle(npimg, location, 3,color[i], thickness=3, lineType=8, shift=0)
     return (npimg,color)
+#compare the distance of body points of each person in the previous frame with the target person in the next frame and then find the feature error between the person we find in the previous frame with the target person in the next frame
 def find_min(first_human,persons,count,exclude):
     #print(first_human.get("body_points"))
     min_error=square_error_checker(persons[0].get("body_points"),first_human.get("body_points"))
@@ -126,6 +130,7 @@ if __name__ == '__main__':
         logger.info('inference image: %s in %.4f seconds.' % (args.image, elapsed))
         (image,human_info,human_boxes,feature) = TfPoseEstimator.draw_humans(im_file, image, humans, imgcopy=False)
         temp_info=feature_extraction(human_info,human_boxes,feature,count)
+        #put the persons in the first frame in to a list
         if count==0:
             for i in range(len(temp_info)):
                 color_person = [random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)]
@@ -133,6 +138,7 @@ if __name__ == '__main__':
             persons=temp_info
             #cv2.imshow("test", image)
             #cv2.waitKey(1)
+        #compare the persons in the nex frame with the persons in the previus frame(based on their body points and their features) and if they appears in the previus frame,update their body points and their bounding boxes;if not then added them as a new persons
         else:
             exclude=[]
             for i in range(len(temp_info)):
