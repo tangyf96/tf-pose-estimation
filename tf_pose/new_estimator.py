@@ -399,79 +399,47 @@ class TfPoseEstimator:
         # npimg_q += 0.5
         npimg_q = npimg_q.astype(np.uint8)
         return npimg_q
+    
+    
     @staticmethod
-    def draw_humans(im_name,npimg, humans, imgcopy=False):
+    def draw_humans(im_name, npimg, humans, imgcopy=False):
         body_info={0: "Nose", 1: "Neck", 2: "RShoulder", 3: "RElbow", 4: "RWrist",
 		   5: "LShoulder", 6: "LElbow", 7: "LWrist", 8: "RHip", 9: "RKnee", 10: "RAnkle" , 11: "LHip" , 12: "LKnee",
 		   13: "LAnkle", 14: "REye", 15: "LEye", 16: "REar", 17: "LEar", 18: "Background"}
+        
         if imgcopy:
             npimg = np.copy(npimg)
+        
         image_h, image_w = npimg.shape[:2]
-        #print(image_h,image_w)
         centers = {}
         human_info=[]
-        human_boxes=[]
-        features=[]
         for human in humans:
-            # draw point
-            #box=[]
-            posg_y=0
-            posl_y=100000
-            posg_x=0
-            posl_x=1000000
-            bodies=[]
-            #position=human.get_upper_body_box(image_h, image_w)
-            #cv2.circle(npimg,(position.get("x")+position.get("w"),position.get("y")+position.get("h")),10,(20,80,0),5)
-            #cv2.circle(npimg,(position.get("x"),position.get("y")),10,(20,80,80),5)
-            #cv2.rectangle(npimg,(position.get("x")*image_w,position.get("y")*image_h),(position.get("x")+position.get("w"),position.get("y")*image_h+position.get("h")),)
+            bodies=[]            
             for i in range(common.CocoPart.Background.value):
-                #print(len(human.body_parts))
                 if i not in human.body_parts.keys():
-                    print(body_info.get(i),'None')
-                    bodies.append((body_info.get(i),None))
-                    #f.write(body_info.get(i)+": None")
-                    #f.write('\n')
+                    #print(body_info.get(i),'None')
+                    bodies.append((body_info.get(i), (-1, -1) ))
                     continue
-                #print(human.body_parts)
+                
+                # draw points
                 body_part = human.body_parts[i]
                 center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
-                print(body_info.get(body_part.get_part_name().value),center)
-                pos_x,pos_y=center
-                posg_x=max(pos_x,posg_x)
-                posl_x=min(posl_x,pos_x)
-                posg_y=max(pos_y,posg_y)
-                posl_y=min(posl_y,pos_y)
-                info=str(center).replace("(","")
-                info=info.replace(")","")
-                [x,y]=info.split(",")
-                #print(int(x),int(y))
-                bodies.append((body_info.get(body_part.get_part_name().value),(int(x),int(y))))
                 centers[i] = center
-                #cv2.circle(npimg, center, 3, common.CocoColors[i], thickness=3, lineType=8, shift=0)
-                #f.write("\n")
-            #cv2.circle(npimg,(posl_x,posl_y),10,(20,80,0),5)
-            #cv2.circle(npimg,(posg_x,posg_y),10,(20,80,80),5)
-            cv2.rectangle(npimg,(posl_x-20,posl_y-20),(posg_x+20,posg_y+20),(0,255,0),3)
-            #feature.append(feature_detection.get_five_features(npimg,posl_y-20,posg_y,posl_x,posg_x))
-            #print(posl_x,posl_y)
-            #print(posg_x,posg_y)
-            #human_boxes.append([posl_x,posl_y,posg_x,posg_y])
+                #print(body_info.get(i),center)
+                bodies.append((body_info.get(i), center))
+                cv2.circle(npimg, center, 3, common.CocoColors[i], thickness=3, lineType=8, shift=0)
+            
             # draw line
-            #for pair_order, pair in enumerate(common.CocoPairsRender):
-                #if pair[0] not in human.body_parts.keys() or pair[1] not in human.body_parts.keys():
-                    #continue
-
-                # npimg = cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
-                #cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
-            print('\n')
+            for pair_order, pair in enumerate(common.CocoPairsRender):
+                if pair[0] not in human.body_parts.keys() or pair[1] not in human.body_parts.keys():
+                    continue
+                cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
+                
             if remove_person(bodies)<=len(bodies)/2:
                 human_info.append(bodies)
-                human_boxes.append([posl_x,posl_y,posg_x,posg_y])
-                features.append(feature_detection.get_five_features(npimg,posl_y-20,posg_y,posl_x,posg_x))
-        #human_info=sort_points(human_info)
-        #f.write("\n")
-        #print(op_imfile)
-        return (npimg,human_info,human_boxes,features)
+
+        return npimg, human_info
+    
 
     def _get_scaled_img(self, npimg, scale):
         get_base_scale = lambda s, w, h: max(self.target_size[0] / float(h), self.target_size[1] / float(w)) * s
