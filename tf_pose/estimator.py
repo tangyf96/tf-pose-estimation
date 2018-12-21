@@ -231,6 +231,8 @@ class Human:
                 "y": _round((y + y2) / 2),
                 "w": _round(x2 - x),
                 "h": _round(y2 - y)}
+        
+        
 
     def __str__(self):
         return ' '.join([str(x) for x in self.body_parts.values()])

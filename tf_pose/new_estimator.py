@@ -103,7 +103,7 @@ class Human:
     def get_max_score(self):
         return max([x.score for _, x in self.body_parts.items()])
 
-    def get_face_box(self, img_w, img_h, mode=0):
+    def get_face_box(self, img_w, img_h, mode=0, offset=20):
         """
         Get Face box compared to img size (w, h)
         :param img_w:
@@ -165,10 +165,10 @@ class Human:
         y2 = y + size
 
         # fit into the image frame
-        x = max(0, x)
-        y = max(0, y)
-        x2 = min(img_w - x, x2 - x) + x
-        y2 = min(img_h - y, y2 - y) + y
+        x = max(0, x-offset)
+        y = max(0, y-offset)
+        x2 = min(img_w - x, x2 - x) + x + offset
+        y2 = min(img_h - y, y2 - y) + y + offset
 
         if _round(x2 - x) == 0.0 or _round(y2 - y) == 0.0:
             return None
@@ -183,7 +183,7 @@ class Human:
                     "w": _round(x2 - x),
                     "h": _round(y2 - y)}
 
-    def get_upper_body_box(self, img_w, img_h):
+    def get_upper_body_box(self, img_w, img_h, offset=20):
         """
         Get Upper body box compared to img size (w, h)
         :param img_w:
@@ -243,10 +243,10 @@ class Human:
         # ------ Adjust heuristically -
 
         # fit into the image frame
-        x = max(0, x)
-        y = max(0, y)
-        x2 = min(img_w - x, x2 - x) + x
-        y2 = min(img_h - y, y2 - y) + y
+        x = max(0, x-offset)
+        y = max(0, y-offset)
+        x2 = min(img_w - x, x2 - x) + x + offset
+        y2 = min(img_h - y, y2 - y) + y + offset
 
         if _round(x2 - x) == 0.0 or _round(y2 - y) == 0.0:
             return None
@@ -412,12 +412,13 @@ class TfPoseEstimator:
         
         image_h, image_w = npimg.shape[:2]
         centers = {}
-        human_info=[]
+        human_info=[] 
+        face_info = []
         for human in humans:
             bodies=[]            
             for i in range(common.CocoPart.Background.value):
                 if i not in human.body_parts.keys():
-                    #print(body_info.get(i),'None')
+                    print(body_info.get(i),'None')
                     bodies.append((body_info.get(i), (-1, -1) ))
                     continue
                 
@@ -425,7 +426,7 @@ class TfPoseEstimator:
                 body_part = human.body_parts[i]
                 center = (int(body_part.x * image_w + 0.5), int(body_part.y * image_h + 0.5))
                 centers[i] = center
-                #print(body_info.get(i),center)
+                print(body_info.get(i),center)
                 bodies.append((body_info.get(i), center))
                 cv2.circle(npimg, center, 3, common.CocoColors[i], thickness=3, lineType=8, shift=0)
             
@@ -434,11 +435,21 @@ class TfPoseEstimator:
                 if pair[0] not in human.body_parts.keys() or pair[1] not in human.body_parts.keys():
                     continue
                 cv2.line(npimg, centers[pair[0]], centers[pair[1]], common.CocoColors[pair_order], 3)
-                
+            
+            #draw face
+            rect = human.get_face_box(image_w, image_h, mode=1, offset=10)
+            if rect is not None:
+                face = (int(rect['x']), int(rect['y']), int(rect['w']), int(rect['h']))
+                cv2.rectangle(npimg, (face[0], face[1]), (face[0]+face[2], face[1]+face[3]), (0,255,0),1)
+            else:
+                face = (-1, -1, -1, -1)
+
+            
             if remove_person(bodies)<=len(bodies)/2:
                 human_info.append(bodies)
+                face_info.append(face)
 
-        return npimg, human_info
+        return npimg, human_info, face_info
     
 
     def _get_scaled_img(self, npimg, scale):

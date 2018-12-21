@@ -5,6 +5,8 @@ import os
 import glob
 from tf_pose import common
 import numpy as np
+import cv2
+
 #from tf_pose.estimator import TfPoseEstimator
 from tf_pose.new_estimator import TfPoseEstimator
 from tf_pose.networks import get_graph_path, model_wh
@@ -18,10 +20,11 @@ def write_to_file(image, human_info, im_file):
     
     for human in human_info:
         for (information,location) in human:
-            f.write(information+": "+str(location))
+            f.write(information+ ": " + str(location[0]) +", "+ str(location[1]) )
             f.write("\n")
         f.write("\n")
     f.close()
+    cv2.imwrite(im_file.replace(im_file[-4:], "op.JPG"), image)
     
     
     
@@ -30,7 +33,7 @@ def write_to_file(image, human_info, im_file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='tf-pose-estimation run')
-    parser.add_argument('--image_dir', type=str, default='images/xahid_youya/input/selected')
+    parser.add_argument('--image_dir', type=str, default='images/reid/input')
     parser.add_argument('--image_type', type=str, default='*.jpg')
     
     parser.add_argument('--model', type=str, default='mobilenet_thin', help='cmu / mobilenet_thin')
@@ -63,9 +66,14 @@ if __name__ == '__main__':
             continue
         
         humans = e.inference(img, resize_to_default=(w > 0 and h > 0), upsample_size=args.resize_out_ratio)
-        image, human_info = TfPoseEstimator.draw_humans(im_file, img, humans, imgcopy=False)
+        image, human_info, face_info = TfPoseEstimator.draw_humans(im_file, img, humans, imgcopy=False)
+        #cv2.imshow('testing openpose', image)
+        #cv2.waitKey(100)
         write_to_file(image, human_info, im_file)
         
     elapsed = time.time() - t
     print
-    print("total Time taken for processing {0} images: {0} seconds".format(len(TEST_IMAGE_PATHS), elapsed))
+    print("Time taken for processing {0} images: {1} seconds".format(len(TEST_IMAGE_PATHS), elapsed))
+
+
+
