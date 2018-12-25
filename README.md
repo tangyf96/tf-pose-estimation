@@ -1,6 +1,6 @@
 ### tf-pose-estimation
 
-Tensorflow implementation of Openpose for 2d human pose estimation in images; forked from https://github.com/ildoonet/tf-pose-estimation
+Tensorflow implementation of Openpose; forked from https://github.com/ildoonet/tf-pose-estimation
 
 
 #### References
