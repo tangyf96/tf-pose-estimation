@@ -1,6 +1,6 @@
 ### tf-pose-estimation
 
-Tensorflow implementation of Openpose; forked from https://github.com/ildoonet/tf-pose-estimation
+TensorFlow implementation of OpenPose; forked from https://github.com/ildoonet/tf-pose-estimation
 
 
 #### References
