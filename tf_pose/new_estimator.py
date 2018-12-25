@@ -440,7 +440,7 @@ class TfPoseEstimator:
             rect = human.get_face_box(image_w, image_h, mode=1, offset=10)
             if rect is not None:
                 face = (int(rect['x']), int(rect['y']), int(rect['w']), int(rect['h']))
-                cv2.rectangle(npimg, (face[0], face[1]), (face[0]+face[2], face[1]+face[3]), (0,255,0),1)
+                #cv2.rectangle(npimg, (face[0], face[1]), (face[0]+face[2], face[1]+face[3]), (0,255,0),1)
             else:
                 face = (-1, -1, -1, -1)
 

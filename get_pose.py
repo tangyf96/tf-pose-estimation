@@ -11,20 +11,29 @@ import cv2
 from tf_pose.new_estimator import TfPoseEstimator
 from tf_pose.networks import get_graph_path, model_wh
 
-# write the body points of each human into a file
-def write_to_file(image, human_info, im_file):
-    op_imfile = im_file.replace(im_file[-4:], ".txt")
+OUTPUT_DIR = 'images/output/'
+
+def sort_annotate_and_write(image, human_info, sorted_idx, im_file):
+    """ Annotate key-points in image and write to a file
+         > also writes person based on sorted index
+            (left-most person in the image to the right-most)
+    """
+    global OUTPUT_DIR
+    fname = im_file.split('/')[-1]
+    op_imfile = os.path.join(OUTPUT_DIR, fname.replace(fname[-4:], ".txt"))
     f = open(op_imfile, "w")
     f.write(str(len(human_info)))
     f.write("\n\n")
     
-    for human in human_info:
+    for idx in sorted_idx:
+        human = human_info[idx]
         for (information,location) in human:
             f.write(information+ ": " + str(location[0]) +", "+ str(location[1]) )
             f.write("\n")
         f.write("\n")
     f.close()
-    #cv2.imwrite(im_file.replace(im_file[-4:], "op.JPG"), image)
+
+    cv2.imwrite(op_imfile.replace(op_imfile[-4:], "op.JPG"), image)
     
     
     
@@ -32,48 +41,36 @@ def write_to_file(image, human_info, im_file):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='tf-pose-estimation run')
+    parser = argparse.ArgumentParser()
     parser.add_argument('--image_dir', type=str, default='images/pid')
-    parser.add_argument('--image_type', type=str, default='*.jpg')
-    
+    parser.add_argument('--image_type', type=str, default='*.jpg')    
     parser.add_argument('--model', type=str, default='mobilenet_thin', help='cmu / mobilenet_thin')
-    parser.add_argument('--resize', type=str, default='0x0',
-                    help='if provided, resize images before they are processed. default=0x0, Recommends : 432x368 or 656x368 or 1312x736 ')
-    parser.add_argument('--resize-out-ratio', type=float, default=4.0,
-                    help='if provided, resize heatmaps before they are post-processed. default=1.0')
     args = parser.parse_args()
-    
-    w, h = model_wh(args.resize)
-    if w == 0 or h == 0:
-        e = TfPoseEstimator(get_graph_path(args.model), target_size=(432, 368))
-    else:
-        e = TfPoseEstimator(get_graph_path(args.model), target_size=(w, h))
-    
-    count=0
-    persons=[]
-    color=[]
-    
+
     TEST_IMAGE_PATHS = glob.glob(os.path.join(args.image_dir, args.image_type))
     TEST_IMAGE_PATHS.sort(key=lambda f: int(filter(str.isdigit, f)))
+    
+    e = TfPoseEstimator(get_graph_path(args.model), target_size=(432, 368))
     t = time.time()
-    for im_file in TEST_IMAGE_PATHS:
-        print
-        print('Processing = {0}'.format(im_file))        
 
+    for im_file in TEST_IMAGE_PATHS:
+        print('Processing: {0}'.format(im_file))        
         img = common.read_imgfile(im_file, None, None)
-        if img is None:
-            print('Image can not be read, path= {0}'.format(im_file))
-            continue
+        if img is None: continue
         
-        humans = e.inference(img, resize_to_default=(w > 0 and h > 0), upsample_size=args.resize_out_ratio)
+        humans = e.inference(img, resize_to_default=False, upsample_size=4)
         image, human_info, face_info = TfPoseEstimator.draw_humans(im_file, img, humans, imgcopy=False)
-        #cv2.imshow('testing openpose', image)
-        #cv2.waitKey(100)
-        write_to_file(image, human_info, im_file)
+
+        face_x = []
+        for face in face_info:
+            fx = face[0] if face[0]>0 else 1e4
+            face_x.append(fx)
+        sorted_idx = np.argsort(face_x)
+        sort_annotate_and_write(image, human_info, sorted_idx, im_file)
         
-    elapsed = time.time() - t
-    print
-    print("Time taken for processing {0} images: {1} seconds".format(len(TEST_IMAGE_PATHS), elapsed))
+    print("Processing time for {0} images: {1} sec".format(len(TEST_IMAGE_PATHS), time.time() - t))
+
+
 
 
 
