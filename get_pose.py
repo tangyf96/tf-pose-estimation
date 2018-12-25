@@ -24,7 +24,7 @@ def write_to_file(image, human_info, im_file):
             f.write("\n")
         f.write("\n")
     f.close()
-    cv2.imwrite(im_file.replace(im_file[-4:], "op.JPG"), image)
+    #cv2.imwrite(im_file.replace(im_file[-4:], "op.JPG"), image)
     
     
     
@@ -33,7 +33,7 @@ def write_to_file(image, human_info, im_file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='tf-pose-estimation run')
-    parser.add_argument('--image_dir', type=str, default='images/reid/input')
+    parser.add_argument('--image_dir', type=str, default='images/pid')
     parser.add_argument('--image_type', type=str, default='*.jpg')
     
     parser.add_argument('--model', type=str, default='mobilenet_thin', help='cmu / mobilenet_thin')
