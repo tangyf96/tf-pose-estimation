@@ -9,7 +9,7 @@ TensorFlow implementation of OpenPose; forked from https://github.com/ildoonet/t
 - cd tf_pose/pafprocess/
 - swig -python -c++ pafprocess.i && python3 setup.py build_ext --inplace
 
-* You can also follow the full installization process in the original repo
+* Note that this repo has reduced functionalities; if you need the full package and other modules, follow the installization process in the original repo
 
 #### References
 
