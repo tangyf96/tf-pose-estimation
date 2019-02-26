@@ -11,7 +11,7 @@ import cv2
 from tf_pose.new_estimator import TfPoseEstimator
 from tf_pose.networks import get_graph_path, model_wh
 
-OUTPUT_DIR = 'images/output/'
+OUTPUT_DIR = 'images/xahid_youya/output/'
 
 def sort_annotate_and_write(image, human_info, sorted_idx, im_file):
     """ Annotate key-points in image and write to a file
@@ -42,7 +42,7 @@ def sort_annotate_and_write(image, human_info, sorted_idx, im_file):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--image_dir', type=str, default='images/all')
+    parser.add_argument('--image_dir', type=str, default='images/xahid_youya/input')
     parser.add_argument('--image_type', type=str, default='*.jpg')    
     parser.add_argument('--model', type=str, default='mobilenet_thin', help='cmu / mobilenet_thin')
     args = parser.parse_args()
