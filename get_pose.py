@@ -36,8 +36,6 @@ def sort_annotate_and_write(image, human_info, sorted_idx, im_file):
     cv2.imwrite(op_imfile.replace(op_imfile[-4:], "op.JPG"), image)
     
     
-    
-
 
 
 if __name__ == '__main__':
