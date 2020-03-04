@@ -4,103 +4,95 @@ import tensorflow as tf
 
 from tf_pose import network_base
 
+class ResBlock(tf.keras.Model):
 
-class ResNetNetwork(network_base.BaseNetwork):
-    def __init__(self, inputs, trainable=True, conv_width=1.0, conv_width2=None):
-        self.conv_width = conv_width
-        self.conv_width2 = conv_width2 if conv_width2 else conv_width
-        network_base.BaseNetwork.__init__(self, inputs, trainable)
+    def __init__(self,filter_num,stride=1):
+        super(ResBlock, self).__init(name="ResBlock")
+        self.conv1=tf.keras.layers.Conv2D(filters=filter_num, kernel_size=(3,3), strides=stride,padding="same")
+        self.bn1=tf.keras.layers.BatchNormalziation()
+        self.conv2=tf.keras.layers.Conv2D(filters=filter_num, kernel_size=(3,3), strides=1, padding="same")
+        self.bn2=tf.keras.layers.BatchNormalziation()
+        ##relu activation
+        self.activation=tf.keras.layers.ReLU()
+        self.stride=stride
+        ##dot-line connection by using 1*1 kernel size for projection
+        if self.stride!=1:
+            self.conv3=tf.keras.layers.Conv2D(filters=filter_num, kernel_size=(1,1), strides, padding="valid")
+            self.bn3=tf.keras.layers.BatchNormalziation()
+    def call(self,x):
+        x1=self.conv1(x)
+        x1=self.bn1(x1)
+        x1=self.activation(x1)
+        x1=self.conv2(x1)
+        x1=self.bn2(x1)
+        ##match the increasing dimensions
+        if self.stride!=1:
+            x=self.conv3(x)
+            x=self.bn3(x)
+        x1=tf.keras.layers.add([x,x1])
+        x1=self.activation(x1)
+        return x1
 
-    def setup(self):
-        min_depth = 8
-        depth = lambda d: max(int(d * self.conv_width), min_depth)
-        depth2 = lambda d: max(int(d * self.conv_width2), min_depth)
+class ResNetNetwork(tf.keras.Model):
+    def __init__(self):
+        super(ResNetwork, self).__init__(name='ResNet34')
+        self.conv1=tf.keras.layers(filters=64, kernel_size=(7,7),strides=2, padding="same")
+        self.bn1=BatchNormalziation()
+        self.activation=tf.keras.layers.ReLU()
+        self.maxpool=tf.keras.layers.MaxPool2D(pool_size=(3,3),strides=2,padding="valid")
 
-        with tf.variable_scope(None, 'MobilenetV1'):
-            (self.feed('image')
-             .convb(3, 3, depth(32), 2, name='Conv2d_0')
-             .separable_conv(3, 3, depth(64), 1, name='Conv2d_1')
-             .separable_conv(3, 3, depth(128), 2, name='Conv2d_2')
-             .separable_conv(3, 3, depth(128), 1, name='Conv2d_3')
-             .separable_conv(3, 3, depth(256), 2, name='Conv2d_4')
-             .separable_conv(3, 3, depth(256), 1, name='Conv2d_5')
-             .separable_conv(3, 3, depth(512), 1, name='Conv2d_6')
-             .separable_conv(3, 3, depth(512), 1, name='Conv2d_7')
-             .separable_conv(3, 3, depth(512), 1, name='Conv2d_8')
-             .separable_conv(3, 3, depth(512), 1, name='Conv2d_9')
-             .separable_conv(3, 3, depth(512), 1, name='Conv2d_10')
-             .separable_conv(3, 3, depth(512), 1, name='Conv2d_11')
-             # .separable_conv(3, 3, depth(1024), 2, name='Conv2d_12')
-             # .separable_conv(3, 3, depth(1024), 1, name='Conv2d_13')
-             )
+        #based on the resnet paper, 3 blocks of 64 feature maps
+        self.conv2_1=ResBlock(64)
+        self.conv2_2=ResBlock(64)
+        self.conv2_3=ResBlock(64)
 
-        (self.feed('Conv2d_3').max_pool(2, 2, 2, 2, name='Conv2d_3_pool'))
+        #4 blocks of 128 feature maps
+        self.conv3_1=ResBlock(128,2)
+        self.conv3_2=ResBlock(128)
+        self.conv3_3=ResBlock(128)
+        self.conv3_4=ResBlock(128)
 
-        (self.feed('Conv2d_3_pool', 'Conv2d_7', 'Conv2d_11')
-         .concat(3, name='feat_concat'))
+        #6 blocks of 128 feature maps
+        self.conv4_1=ResBlock(256,2)
+        self.conv4_2=ResBlock(256)
+        self.conv4_3=ResBlock(256)
+        self.conv4_4=ResBlock(256)
+        self.conv4_5=ResBlock(256)
+        self.conv4_6=ResBlock(256)
 
-        feature_lv = 'feat_concat'
-        with tf.variable_scope(None, 'Openpose'):
-            prefix = 'MConv_Stage1'
-            (self.feed(feature_lv)
-             .separable_conv(3, 3, depth2(128), 1, name=prefix + '_L1_1')
-             .separable_conv(3, 3, depth2(128), 1, name=prefix + '_L1_2')
-             .separable_conv(3, 3, depth2(128), 1, name=prefix + '_L1_3')
-             .separable_conv(1, 1, depth2(512), 1, name=prefix + '_L1_4')
-             .separable_conv(1, 1, 38, 1, relu=False, name=prefix + '_L1_5'))
+        #based on the resnet paper, 3 blocks of 64 feature maps
+        self.conv5_1=ResBlock(512,2)
+        self.conv5_2=ResBlock(512)
+        self.conv5_3=ResBlock(512)
+        #omit the final pooling and fc layers due to our requirements
+        #self.apool=tf.keras.layers.GlobalAvgPool2D()
+        #self.fc=...
+        #dimensions reduction
+        #self.maxpool2=tf.keras.layers.MaxPool2D(pool_size=(2,2),strides=2,padding="valid")
+        #self.maxpool2=tf.keras.layers.MaxPool2D(pool_size=(2,2),strides=2,padding="valid")
+    def call(self,x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.activation(x)
+        x = self.maxpool(x)
 
-            (self.feed(feature_lv)
-             .separable_conv(3, 3, depth2(128), 1, name=prefix + '_L2_1')
-             .separable_conv(3, 3, depth2(128), 1, name=prefix + '_L2_2')
-             .separable_conv(3, 3, depth2(128), 1, name=prefix + '_L2_3')
-             .separable_conv(1, 1, depth2(512), 1, name=prefix + '_L2_4')
-             .separable_conv(1, 1, 19, 1, relu=False, name=prefix + '_L2_5'))
+        x = self.conv2_1(x)
+        x = self.conv2_2(x)
+        x = self.conv2_3(x)
 
-            for stage_id in range(5):
-                prefix_prev = 'MConv_Stage%d' % (stage_id + 1)
-                prefix = 'MConv_Stage%d' % (stage_id + 2)
-                (self.feed(prefix_prev + '_L1_5',
-                           prefix_prev + '_L2_5',
-                           feature_lv)
-                 .concat(3, name=prefix + '_concat')
-                 .separable_conv(3, 3, depth2(128), 1, name=prefix + '_L1_1')
-                 .separable_conv(3, 3, depth2(128), 1, name=prefix + '_L1_2')
-                 .separable_conv(3, 3, depth2(128), 1, name=prefix + '_L1_3')
-                 .separable_conv(1, 1, depth2(128), 1, name=prefix + '_L1_4')
-                 .separable_conv(1, 1, 38, 1, relu=False, name=prefix + '_L1_5'))
+        x = self.conv3_1(x)
+        x = self.conv3_2(x)
+        x = self.conv3_3(x)
+        x = self.conv3_4(x)
 
-                (self.feed(prefix + '_concat')
-                 .separable_conv(3, 3, depth2(128), 1, name=prefix + '_L2_1')
-                 .separable_conv(3, 3, depth2(128), 1, name=prefix + '_L2_2')
-                 .separable_conv(3, 3, depth2(128), 1, name=prefix + '_L2_3')
-                 .separable_conv(1, 1, depth2(128), 1, name=prefix + '_L2_4')
-                 .separable_conv(1, 1, 19, 1, relu=False, name=prefix + '_L2_5'))
+        x = self.conv4_1(x)
+        x = self.conv4_2(x)
+        x = self.conv4_3(x)
+        x = self.conv4_4(x)
+        x = self.conv4_5(x)
+        x = self.conv4_6(x)
 
-            # final result
-            (self.feed('MConv_Stage6_L2_5',
-                       'MConv_Stage6_L1_5')
-             .concat(3, name='concat_stage7'))
-
-    def loss_l1_l2(self):
-        l1s = []
-        l2s = []
-        for layer_name in sorted(self.layers.keys()):
-            if '_L1_5' in layer_name:
-                l1s.append(self.layers[layer_name])
-            if '_L2_5' in layer_name:
-                l2s.append(self.layers[layer_name])
-
-        return l1s, l2s
-
-    def loss_last(self):
-        return self.get_output('MConv_Stage6_L1_5'), self.get_output('MConv_Stage6_L2_5')
-
-    def restorable_variables(self):
-        vs = {v.op.name: v for v in tf.global_variables() if
-              'MobilenetV1/Conv2d' in v.op.name and
-              # 'global_step' not in v.op.name and
-              # 'beta1_power' not in v.op.name and 'beta2_power' not in v.op.name and
-              'RMSProp' not in v.op.name and 'Momentum' not in v.op.name and
-              'Ada' not in v.op.name and 'Adam' not in v.op.name
-              }
-        return vs
+        x = self.conv5_1(x)
+        x = self.conv5_2(x)
+        x = self.conv5_3(x)
+        return x
